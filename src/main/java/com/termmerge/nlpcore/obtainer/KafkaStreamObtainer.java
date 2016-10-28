@@ -1,4 +1,4 @@
-package com.wordmerge.nlpcore.obtainer;
+package com.termmerge.nlpcore.obtainer;
 
 import java.util.Map;
 import java.util.List;
@@ -9,11 +9,10 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Collections;
 
+import com.termmerge.nlpcore.AppLogger;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-
-import com.wordmerge.nlpcore.AppLogger;
 
 
 /**

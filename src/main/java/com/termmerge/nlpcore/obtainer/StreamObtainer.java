@@ -1,4 +1,4 @@
-package com.wordmerge.nlpcore.obtainer;
+package com.termmerge.nlpcore.obtainer;
 
 import java.util.Map;
 import java.util.function.Consumer;

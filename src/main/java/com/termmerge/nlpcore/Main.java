@@ -1,4 +1,4 @@
-package com.wordmerge.nlpcore;
+package com.termmerge.nlpcore;
 
 /**
  * Hello world!
