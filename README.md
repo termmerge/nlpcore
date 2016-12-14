@@ -1,5 +1,7 @@
 ![](assets/termmerge.png)
 
+[![Build Status](https://travis-ci.org/termmerge/nlpcore.svg?branch=master)](https://travis-ci.org/termmerge/nlpcore)
+
 ## NLPCore Service
 Core Kernel Server that orchestrates all the low-level data crunching work needed for reporting, 
 storing and running queries about **word convergences**. NLPCore obtains reported word convergences 
