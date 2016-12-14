@@ -3,11 +3,13 @@ package com.termmerge.nlpcore;
 import java.util.logging.Logger;
 
 /**
- * Catches all logs
+ * Catches all app logs
  */
-public class AppLogger extends Logger {
+public class AppLogger extends Logger
+{
 
-  public AppLogger() {
+  public AppLogger()
+  {
     super("com.wordmerge.nlpcore.global", null);
   }
 
