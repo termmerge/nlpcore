@@ -3,7 +3,6 @@ package com.termmerge.nlpcore.obtainer;
 import java.util.Map;
 import java.util.List;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.Properties;
@@ -19,38 +18,38 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
  * Obtains a data stream from a publisher using the
  * Apache Kafka publish-subscribe system.
  */
-public class KafkaStreamObtainer implements StreamObtainer {
+public class KafkaStreamObtainer implements StreamObtainer
+{
 
   private Properties networkSettings;  // Key-Value Pairs of Kafka Settings
   private List<Consumer> listeners;    // Thread-safe list of stream listeners
-  private boolean hasAssignedTopic;    // Currently subscribing to a topic?
-  private Thread pollingThread;        // Thread object that polls Kafka
-  private Logger appLogger;            // Application Logger
+  private boolean hasAssignedTopic;    // Currently subscribed to a topic?
+  private Thread pollingThread;        // Kafka Polling Thread
+  private AppLogger appLogger;         // Application Logger
 
-  public KafkaStreamObtainer() {
-    // Obtain required environment variables and emit an error if non-existent
-    String[] kafkaSettings = {
-            System.getenv("KAFKA_HOST"),
-            System.getenv("KAFKA_PORT"),
-            System.getenv("KAFKA_GROUP_ID")
-    };
-    for (String kafkaSetting : kafkaSettings) {
-      if (kafkaSetting == null) {
+
+  public KafkaStreamObtainer(Map<String, String> kafkaSettings)
+  {
+    // Obtain required settings and emit an error if non-existent
+    String[] requiredSettings = {"connection_string", "group_id"};
+    for (String requiredSetting : requiredSettings) {
+      if (kafkaSettings.get(requiredSetting) == null) {
         throw new RuntimeException(
-                "System environment variables are not set!"
+                "Kafka settings are not correctly set!"
         );
       }
     }
 
     // Kafka Network Settings
     this.networkSettings = new Properties();
-    networkSettings.setProperty("bootstrap.servers",
-            kafkaSettings[0] + " " + kafkaSettings[1]);
-    networkSettings.setProperty("group.id", kafkaSettings[2]);
-    networkSettings.setProperty("enable.auto.commit", "true");
-    networkSettings.setProperty("key.deserializer",
+    networkSettings.put("bootstrap.servers",
+            kafkaSettings.get("connection_string"));
+    networkSettings.put("auto.offset.reset", "earliest");
+    networkSettings.put("group.id", kafkaSettings.get("group_id"));
+    networkSettings.put("enable.auto.commit", "true");
+    networkSettings.put("key.deserializer",
             "org.apache.kafka.common.serialization.StringDeserializer");
-    networkSettings.setProperty("value.deserializer",
+    networkSettings.put("value.deserializer",
             "org.apache.kafka.common.serialization.StringDeserializer");
 
     this.listeners = Collections.synchronizedList(
@@ -61,7 +60,8 @@ public class KafkaStreamObtainer implements StreamObtainer {
     this.appLogger = new AppLogger();
   }
 
-  public void listenToStream(String topicName) {
+  public void listenToStream(String topicName)
+  {
     if (this.hasAssignedTopic) {
       throw new RuntimeException("Cannot listen/switch to another topic");
     }
@@ -70,51 +70,53 @@ public class KafkaStreamObtainer implements StreamObtainer {
 
     this.pollingThread = new Thread(() -> {
       // Initialize Kafka Consumer and subscribe to specified topic
-      KafkaConsumer kafkaConsumer =
-              new KafkaConsumer<String, String>(networkSettings);
+      KafkaConsumer<String, String> kafkaConsumer =
+              new KafkaConsumer<>(networkSettings);
       ArrayList topicsList = new ArrayList<String>();
       topicsList.add(topicName);
       kafkaConsumer.subscribe(topicsList);
 
       // Continuously Obtain Kafka records and fire listeners
       while (!Thread.currentThread().isInterrupted()) {
-        synchronized (listeners) {
-          ConsumerRecords<String, String> consumerRecordList =
-                  kafkaConsumer.poll(100);
+        ConsumerRecords<String, String> consumerRecordList =
+                kafkaConsumer.poll(10);
 
+        synchronized (listeners) {
           for (ConsumerRecord<String, String> consumerRecord :
                   consumerRecordList) {
             for (Consumer listener : listeners) {
               Properties kafkaRecord = new Properties();
-              kafkaRecord.setProperty("key", consumerRecord.key());
-              kafkaRecord.setProperty("value", consumerRecord.value());
-
+              kafkaRecord.put("key", consumerRecord.key());
+              kafkaRecord.put("value", consumerRecord.value());
               listener.accept(kafkaRecord);
             }
           }
         }
-
-        this.appLogger.info("(Kafka Thread) Kafka Thread interrupted");
-        kafkaConsumer.close();
       }
+
+      this.appLogger.warning("(Kafka Thread) Kafka Thread interrupted");
+      kafkaConsumer.close();
     });
-    this.pollingThread.run();
+    this.pollingThread.start();
   }
 
-  public void addListener(Consumer<Map<String, String>> listener) {
+  public void addListener(Consumer<Map<String, String>> listener)
+  {
     this.listeners.add(listener);
   }
 
-  public void removeListener(Consumer<Map<String, String>> listener) {
+  public void removeListener(Consumer<Map<String, String>> listener)
+  {
     this.listeners.remove(listener);
   }
 
-  public void teardownStream() {
+  public void teardownStream()
+  {
     this.listeners = null;
 
     if (this.pollingThread != null) {
       this.pollingThread.interrupt();
-      this.appLogger.info("(Main Thread) Kafka Thread interrupted");
+      this.appLogger.warning("(Main Thread) Kafka Thread interrupted");
     }
   }
 
