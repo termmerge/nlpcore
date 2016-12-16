@@ -8,7 +8,8 @@ import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Collections;
 
-import com.termmerge.nlpcore.AppLogger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -25,7 +26,7 @@ public class KafkaStreamObtainer implements StreamObtainer
   private List<Consumer> listeners;    // Thread-safe list of stream listeners
   private boolean hasAssignedTopic;    // Currently subscribed to a topic?
   private Thread pollingThread;        // Kafka Polling Thread
-  private AppLogger appLogger;         // Application Logger
+  private Logger logger;               // Application Logger
 
 
   public KafkaStreamObtainer(Map<String, String> kafkaSettings)
@@ -34,7 +35,7 @@ public class KafkaStreamObtainer implements StreamObtainer
     String[] requiredSettings = {"connection_string", "group_id"};
     for (String requiredSetting : requiredSettings) {
       if (kafkaSettings.get(requiredSetting) == null) {
-        throw new RuntimeException(
+        throw new IllegalArgumentException(
                 "Kafka settings are not correctly set!"
         );
       }
@@ -57,16 +58,16 @@ public class KafkaStreamObtainer implements StreamObtainer
     );
     this.hasAssignedTopic = false;
     this.pollingThread = null;
-    this.appLogger = new AppLogger();
+    this.logger = LoggerFactory.getLogger(KafkaStreamObtainer.class);
   }
 
   public void listenToStream(String topicName)
   {
     if (this.hasAssignedTopic) {
-      throw new RuntimeException("Cannot listen/switch to another topic");
+      throw new IllegalStateException("Cannot listen/switch to another topic");
     }
     this.hasAssignedTopic = true;
-    this.appLogger.info("Listening to Kafka Stream, topic: " + topicName);
+    this.logger.info("Listening to Kafka Stream, topic: " + topicName);
 
     this.pollingThread = new Thread(() -> {
       // Initialize Kafka Consumer and subscribe to specified topic
@@ -94,7 +95,7 @@ public class KafkaStreamObtainer implements StreamObtainer
         }
       }
 
-      this.appLogger.warning("(Kafka Thread) Kafka Thread interrupted");
+      this.logger.info("(Kafka Thread) Kafka Thread interrupted");
       kafkaConsumer.close();
     });
     this.pollingThread.start();
@@ -116,7 +117,7 @@ public class KafkaStreamObtainer implements StreamObtainer
 
     if (this.pollingThread != null) {
       this.pollingThread.interrupt();
-      this.appLogger.warning("(Main Thread) Kafka Thread interrupted");
+      this.logger.warn("(Main Thread) Interrupting Kafka Thread");
     }
   }
 

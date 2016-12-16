@@ -20,7 +20,7 @@ public class KafkaStreamObtainerTest
   public static KafkaJunitRule kafkaRule =
           new KafkaJunitRule(EphemeralKafkaBroker.create());
 
-  @Test(expected=RuntimeException.class)
+  @Test(expected=IllegalArgumentException.class)
   public void testInvalidSettingFails()
   {
     Map settings = new Properties();
