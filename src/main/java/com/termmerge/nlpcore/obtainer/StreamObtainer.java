@@ -9,12 +9,12 @@ import java.util.function.Consumer;
  * network and listens to whatever that publisher is
  * producing.
  */
-public interface StreamObtainer {
+public interface StreamObtainer
+{
 
   /**
    * Listen to a specific data stream that is publishing under a certain
    * topicName
-   *
    * @param topicName
    */
   void listenToStream(String topicName);
