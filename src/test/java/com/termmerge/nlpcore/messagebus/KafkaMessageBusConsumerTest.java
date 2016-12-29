@@ -1,4 +1,4 @@
-package com.termmerge.nlpcore.stream;
+package com.termmerge.nlpcore.messagebus;
 
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -13,7 +13,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import java.util.Properties;
 
 
-public class KafkaStreamObtainerTest
+public class KafkaMessageBusConsumerTest
 {
 
   @ClassRule
@@ -24,7 +24,7 @@ public class KafkaStreamObtainerTest
   public void testInvalidSettingFails()
   {
     Map settings = new Properties();
-    new KafkaStreamObtainer(settings);
+    new KafkaMessageBusConsumer(settings);
   }
 
   @Test
@@ -46,8 +46,8 @@ public class KafkaStreamObtainerTest
             )
     );
     consumerSettings.put("group_id", "test");
-    KafkaStreamObtainer testConsumer =
-            new KafkaStreamObtainer(consumerSettings);
+    KafkaMessageBusConsumer testConsumer =
+            new KafkaMessageBusConsumer(consumerSettings);
     testConsumer.addListener((record) -> {
       waiter.assertEquals(record.get("key"), "testKey");
       waiter.assertEquals(record.get("value"), "testValue");

@@ -1,4 +1,4 @@
-package com.termmerge.nlpcore.stream;
+package com.termmerge.nlpcore.messagebus;
 
 import java.util.Map;
 import java.util.function.Consumer;
@@ -9,11 +9,11 @@ import java.util.function.Consumer;
  * network and listens to whatever that publisher is
  * producing.
  */
-public interface StreamObtainer
+public interface MessageBusConsumer
 {
 
   /**
-   * Listen to a specific data stream that is publishing under a certain
+   * Listen to a specific data messagebus that is publishing under a certain
    * topicName
    * @param topicName
    */
@@ -21,7 +21,7 @@ public interface StreamObtainer
 
   /**
    * Add a listener, which acts upon incoming atomic data that is on the
-   * stream. The atomic data has a key-value structure of string keys and
+   * messagebus. The atomic data has a key-value structure of string keys and
    * string values
    * @param listener
    */
@@ -34,7 +34,7 @@ public interface StreamObtainer
   void removeListener(Consumer<Map<String, String>> listener);
 
   /**
-   * Tear down the data stream
+   * Tear down the data messagebus
    */
   void teardownStream();
 

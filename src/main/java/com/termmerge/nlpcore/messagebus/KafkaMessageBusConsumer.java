@@ -1,4 +1,4 @@
-package com.termmerge.nlpcore.stream;
+package com.termmerge.nlpcore.messagebus;
 
 import java.util.Map;
 import java.util.List;
@@ -16,20 +16,20 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 
 /**
- * Obtains a data stream from a publisher using the
+ * Obtains a data messagebus from a publisher using the
  * Apache Kafka publish-subscribe system.
  */
-public class KafkaStreamObtainer implements StreamObtainer
+public class KafkaMessageBusConsumer implements MessageBusConsumer
 {
 
   private Properties networkSettings;  // Key-Value Pairs of Kafka Settings
-  private List<Consumer> listeners;    // Thread-safe list of stream listeners
+  private List<Consumer> listeners;    // Thread-safe list of messagebus listeners
   private boolean hasAssignedTopic;    // Currently subscribed to a topic?
   private Thread pollingThread;        // Kafka Polling Thread
   private Logger logger;               // Application Logger
 
 
-  public KafkaStreamObtainer(Map<String, String> kafkaSettings)
+  public KafkaMessageBusConsumer(Map<String, String> kafkaSettings)
   {
     // Obtain required settings and emit an error if non-existent
     String[] requiredSettings = {"connection_string", "group_id"};
@@ -58,7 +58,7 @@ public class KafkaStreamObtainer implements StreamObtainer
     );
     this.hasAssignedTopic = false;
     this.pollingThread = null;
-    this.logger = LoggerFactory.getLogger(KafkaStreamObtainer.class);
+    this.logger = LoggerFactory.getLogger(KafkaMessageBusConsumer.class);
   }
 
   public void listenToStream(String topicName)
