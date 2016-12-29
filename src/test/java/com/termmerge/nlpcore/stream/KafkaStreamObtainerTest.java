@@ -1,4 +1,4 @@
-package com.termmerge.nlpcore.obtainer;
+package com.termmerge.nlpcore.stream;
 
 import org.junit.ClassRule;
 import org.junit.Test;

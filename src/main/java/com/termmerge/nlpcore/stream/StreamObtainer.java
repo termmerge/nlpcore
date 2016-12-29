@@ -1,4 +1,4 @@
-package com.termmerge.nlpcore.obtainer;
+package com.termmerge.nlpcore.stream;
 
 import java.util.Map;
 import java.util.function.Consumer;
