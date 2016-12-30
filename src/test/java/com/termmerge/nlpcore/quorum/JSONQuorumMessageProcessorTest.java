@@ -15,14 +15,15 @@ public class JSONQuorumMessageProcessorTest
     TaskIdManager taskIdManager = new TaskIdManager()
     {
       @Override
-      public String generateId()
+      public Validation<RuntimeException, String> generateId()
       {
-        return "1";
+        return Validation.success("1");
       }
 
       @Override
-      public void destroyId(String taskId)
+      public Validation<RuntimeException, String> destroyId(String taskId)
       {
+        return Validation.success("1");
       }
     };
 

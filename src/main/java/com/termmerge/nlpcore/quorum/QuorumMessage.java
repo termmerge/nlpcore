@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.Arrays;
 
+import fj.F;
+
 import fj.data.Validation;
 
 
@@ -117,8 +119,6 @@ public class QuorumMessage
             TaskIdManager taskIdManager
     )
     {
-      this.taskId = taskIdManager.generateId();
-      this.time = new Date();
       if (!Arrays.asList(QuorumMessage.ALLOWABLE_SENDER_RECIPIENT)
               .contains(this.sender) ||
               !Arrays.asList(QuorumMessage.ALLOWABLE_SENDER_RECIPIENT)
@@ -132,7 +132,12 @@ public class QuorumMessage
         ));
       }
 
-      return Validation.success(new QuorumMessage(this));
+      this.time = new Date();
+      F<String, QuorumMessage> generateQuorumMessage = (taskId) -> {
+        this.taskId = taskId;
+        return new QuorumMessage(this);
+      };
+      return taskIdManager.generateId().map(generateQuorumMessage);
     }
 
   }
