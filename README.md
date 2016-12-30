@@ -3,10 +3,10 @@
 [![Build Status](https://travis-ci.org/termmerge/nlpcore.svg?branch=master)](https://travis-ci.org/termmerge/nlpcore)
 
 # TermMerge (NLPCore Service)
-Core Kernel Server that orchestrates all the low-level data crunching work needed for reporting, 
-storing and running queries about **word convergences**. NLPCore obtains reported word convergences 
-placed on Apache Kafka and stores them on an immutable distributed file dataset as well as mutates the necessary 
-databases
+Core Kernel Server that orchestrates all the low-level, fault-tolerant and highly-intensive data crunching work needed 
+for running Natural Language Processing tasks, including queries about **word convergences**. From famous NLP tasks like 
+POS and NER tagging to custom, homegrown implementations like Word Convergences and Semantic Tagging, to anything in 
+between, NLPCore does it and does it with strong scalability and redundancy.
 
 Service consumers can:
 * Hook up to TermMerge's NLPCore Service using **WebSockets** to get live analytics on reported word convergences
@@ -23,8 +23,6 @@ WebSockets
 
 ## Network Architecture
 <center><img src="https://rawgit.com/termmerge/nlpcore/master/assets/network_architecture.svg"></center>
-
-At any point during runtime, **leaders** are elected among a quorum of NLPCore server instances. This quorum is managed by Apache Zookeeper using the Apache Curator abstraction. 
 
 * **Interface Group** nodes can: 
   * Accept and give out both HTTP and Websocket requests/responses
