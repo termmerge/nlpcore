@@ -26,14 +26,14 @@ WebSockets
 
 At any point during runtime, **leaders** are elected among a quorum of NLPCore server instances. This quorum is managed by Apache Zookeeper using the Apache Curator abstraction. 
 
-* **Leaders** can: 
+* **Interface Group** nodes can: 
   * Accept and give out both HTTP and Websocket requests/responses
   * Issue out QuorumMessage Requests 
 
-* **Followers** turn into simple computation nodes that can run multiple tasks including:
+* **Compute Group** nodes turn into simple computation nodes that can run multiple tasks including:
   * Continously poll Kafka and retrieve usage analytics about streamed word convergences
   * Do graph-based computation on word convergences
   * Use core Natural Language Processing tasks like tokenization, word splitting, part of speech tagging, lemmatization, named entity recognition, constituency parsing, dependency parsing, coreference resolution and many more! These tasks are delegated to the [Stanford CoreNLP library](http://stanfordnlp.github.io/CoreNLP/) under the hood.
   * Access stored [WordNet](https://wordnet.princeton.edu) and [FrameNet](https://framenet.icsi.berkeley.edu) models
 
-Communication between leaders and followers are currently implemented by using Apache Kafka as the communication medium. This is because we are already using Apache Kafka for storing reported word convergences. Apache Kafka allows us to provide a buffering medium in case requests come in quicker than we can serve them especially considering that NLP tasks tend to be very intensive.
+Communication between the interface group and compute group are currently implemented by using Apache Kafka as the communication medium. This is because we are already using Apache Kafka for storing reported word convergences. Apache Kafka allows us to provide a buffering medium in case requests come in quicker than we can serve them especially considering that NLP tasks tend to be very intensive.
