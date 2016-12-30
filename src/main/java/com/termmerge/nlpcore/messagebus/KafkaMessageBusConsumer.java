@@ -1,14 +1,15 @@
 package com.termmerge.nlpcore.messagebus;
 
-import java.util.Map;
 import java.util.List;
-import java.util.function.Consumer;
 
+import java.util.function.Consumer;
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Collections;
 
 import org.slf4j.Logger;
+
+import fj.data.Validation;
 import org.slf4j.LoggerFactory;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -22,19 +23,29 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 public class KafkaMessageBusConsumer implements MessageBusConsumer
 {
 
-  private Properties networkSettings;  // Key-Value Pairs of Kafka Settings
-  private List<Consumer> listeners;    // Thread-safe list of messagebus listeners
-  private boolean hasAssignedTopic;    // Currently subscribed to a topic?
-  private Thread pollingThread;        // Kafka Polling Thread
-  private Logger logger;               // Application Logger
+  // Key-Value Pairs of Kafka Settings
+  private Properties networkSettings;
+
+  // Thread-safe list of message bus listeners
+  private final
+    List<Consumer<Validation<RuntimeException, Properties>>> listeners;
+
+  // Currently subscribed to a topic?
+  private boolean hasAssignedTopic;
+
+  // Kafka Polling Thread
+  private Thread pollingThread;
+
+  // Application Logger
+  private Logger logger;
 
 
-  public KafkaMessageBusConsumer(Map<String, String> kafkaSettings)
+  private KafkaMessageBusConsumer(Properties kafkaSettings)
   {
     // Obtain required settings and emit an error if non-existent
     String[] requiredSettings = {"connection_string", "group_id"};
     for (String requiredSetting : requiredSettings) {
-      if (kafkaSettings.get(requiredSetting) == null) {
+      if (!kafkaSettings.containsKey(requiredSetting)) {
         throw new IllegalArgumentException(
                 "Kafka settings are not correctly set!"
         );
@@ -44,9 +55,10 @@ public class KafkaMessageBusConsumer implements MessageBusConsumer
     // Kafka Network Settings
     this.networkSettings = new Properties();
     networkSettings.put("bootstrap.servers",
-            kafkaSettings.get("connection_string"));
+            kafkaSettings.getProperty("connection_string"));
     networkSettings.put("auto.offset.reset", "earliest");
-    networkSettings.put("group.id", kafkaSettings.get("group_id"));
+    networkSettings.put("group.id",
+            kafkaSettings.getProperty("group_id"));
     networkSettings.put("enable.auto.commit", "true");
     networkSettings.put("key.deserializer",
             "org.apache.kafka.common.serialization.StringDeserializer");
@@ -54,71 +66,138 @@ public class KafkaMessageBusConsumer implements MessageBusConsumer
             "org.apache.kafka.common.serialization.StringDeserializer");
 
     this.listeners = Collections.synchronizedList(
-            new ArrayList<Consumer>()
+            new ArrayList<>()
     );
     this.hasAssignedTopic = false;
     this.pollingThread = null;
     this.logger = LoggerFactory.getLogger(KafkaMessageBusConsumer.class);
   }
 
-  public void listenToStream(String topicName)
+  public static
+    Validation<RuntimeException, KafkaMessageBusConsumer> constructConsumer(
+          Properties kafkaSettings
+  )
+  {
+    final KafkaMessageBusConsumer instance;
+
+    try {
+      instance = new KafkaMessageBusConsumer(kafkaSettings);
+    } catch (IllegalArgumentException e) {
+      return Validation.fail(e);
+    }
+
+    return Validation.success(instance);
+  }
+
+  public Validation<RuntimeException, Long> listenToMessageBus(
+          String topicName
+  )
   {
     if (this.hasAssignedTopic) {
-      throw new IllegalStateException("Cannot listen/switch to another topic");
+      return Validation.fail(
+              new IllegalStateException(
+                      "Cannot listen/switch to another topic"
+              )
+      );
     }
     this.hasAssignedTopic = true;
-    this.logger.info("Listening to Kafka Stream, topic: " + topicName);
+    this.logger.info("Listening to Kafka Message Bus, topic: " + topicName);
 
     this.pollingThread = new Thread(() -> {
       // Initialize Kafka Consumer and subscribe to specified topic
       KafkaConsumer<String, String> kafkaConsumer =
               new KafkaConsumer<>(networkSettings);
-      ArrayList topicsList = new ArrayList<String>();
+      ArrayList<String> topicsList = new ArrayList<>();
+
+      // Synchronized publish of a Validation object to all current consumers
+
       topicsList.add(topicName);
-      kafkaConsumer.subscribe(topicsList);
+      try {
+        kafkaConsumer.subscribe(topicsList);
+      } catch (RuntimeException e) {
+        this.publishToListeners(Validation.fail(e));
+      }
 
-      // Continuously Obtain Kafka records and fire listeners
+
+      // Continuously obtain Kafka records and fire listeners
+      ConsumerRecords<String, String> consumerRecordList = null;
       while (!Thread.currentThread().isInterrupted()) {
-        ConsumerRecords<String, String> consumerRecordList =
-                kafkaConsumer.poll(10);
+        try {
+          consumerRecordList = kafkaConsumer.poll(10);
+        } catch (RuntimeException e) {
+          this.publishToListeners(Validation.fail(e));
+        }
 
-        synchronized (listeners) {
-          for (ConsumerRecord<String, String> consumerRecord :
-                  consumerRecordList) {
-            for (Consumer listener : listeners) {
-              Properties kafkaRecord = new Properties();
-              kafkaRecord.put("key", consumerRecord.key());
-              kafkaRecord.put("value", consumerRecord.value());
-              listener.accept(kafkaRecord);
-            }
-          }
+        if (consumerRecordList == null) {
+          continue;
+        }
+
+        for (ConsumerRecord<String, String> consumerRecord :
+                consumerRecordList) {
+          Properties kafkaRecord = new Properties();
+          kafkaRecord.put("key", consumerRecord.key());
+          kafkaRecord.put("value", consumerRecord.value());
+          this.publishToListeners(Validation.success(kafkaRecord));
         }
       }
 
       this.logger.info("(Kafka Thread) Kafka Thread interrupted");
       kafkaConsumer.close();
     });
-    this.pollingThread.start();
+
+    try {
+      this.pollingThread.start();
+    } catch (IllegalThreadStateException e) {
+      return Validation.fail(e);
+    }
+
+    return Validation.success(this.pollingThread.getId());
   }
 
-  public void addListener(Consumer<Map<String, String>> listener)
+  public void addListener(
+          Consumer<Validation<RuntimeException, Properties>> listener
+  )
   {
     this.listeners.add(listener);
   }
 
-  public void removeListener(Consumer<Map<String, String>> listener)
+  public void removeListener(
+          Consumer<Validation<RuntimeException, Properties>> listener
+  )
   {
     this.listeners.remove(listener);
   }
 
-  public void teardownStream()
+  public void publishToListeners(
+          Validation<RuntimeException, Properties> validationObject
+  )
   {
-    this.listeners = null;
-
-    if (this.pollingThread != null) {
-      this.pollingThread.interrupt();
-      this.logger.warn("(Main Thread) Interrupting Kafka Thread");
+    synchronized (this.listeners) {
+      for (Consumer<Validation<RuntimeException, Properties>> listener :
+              listeners) {
+        listener.accept(validationObject);
+      }
     }
+  }
+
+  public Validation<RuntimeException, Long> teardownConsumer()
+  {
+    if (this.pollingThread == null) {
+      return Validation.fail(
+              new IllegalStateException(
+                      "Consumer hasn't been started!"
+              )
+      );
+    }
+
+    try {
+      this.pollingThread.interrupt();
+    } catch (SecurityException e) {
+      return Validation.fail(e);
+    }
+
+    this.logger.warn("(Main Thread) Interrupting Kafka Thread");
+    return Validation.success(this.pollingThread.getId());
   }
 
 }

@@ -1,16 +1,17 @@
 package com.termmerge.nlpcore.messagebus;
 
+import java.util.Properties;
+
+import fj.data.Validation;
 import org.junit.ClassRule;
 import org.junit.Test;
+
 import com.github.charithe.kafka.KafkaJunitRule;
 import com.github.charithe.kafka.EphemeralKafkaBroker;
 import net.jodah.concurrentunit.Waiter;
-
-import java.util.Map;
-
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import java.util.Properties;
+import org.junit.Assert;
 
 
 public class KafkaMessageBusConsumerTest
@@ -20,11 +21,15 @@ public class KafkaMessageBusConsumerTest
   public static KafkaJunitRule kafkaRule =
           new KafkaJunitRule(EphemeralKafkaBroker.create());
 
-  @Test(expected=IllegalArgumentException.class)
+  @Test
   public void testInvalidSettingFails()
   {
-    Map settings = new Properties();
-    new KafkaMessageBusConsumer(settings);
+    Properties settings = new Properties();
+    settings.setProperty("connection_string", "_");
+    settings.setProperty("group_id", "_");
+    Assert.assertTrue(
+            KafkaMessageBusConsumer.constructConsumer(settings).isSuccess()
+    );
   }
 
   @Test
@@ -32,29 +37,42 @@ public class KafkaMessageBusConsumerTest
   {
     Waiter waiter = new Waiter();
 
-    KafkaProducer testProducer = kafkaRule.helper().createStringProducer();
+    KafkaProducer<String, String> testProducer =
+            kafkaRule.helper().createStringProducer();
     testProducer.send(
             new ProducerRecord<>("testTopic", "testKey", "testValue")
     );
     testProducer.flush();
 
-    Map consumerSettings = new Properties();
-    consumerSettings.put(
+    Properties consumerSettings = new Properties();
+    consumerSettings.setProperty(
             "connection_string",
             "localhost:" + Integer.toString(
                     kafkaRule.helper().kafkaPort()
             )
     );
-    consumerSettings.put("group_id", "test");
-    KafkaMessageBusConsumer testConsumer =
-            new KafkaMessageBusConsumer(consumerSettings);
-    testConsumer.addListener((record) -> {
-      waiter.assertEquals(record.get("key"), "testKey");
-      waiter.assertEquals(record.get("value"), "testValue");
+    consumerSettings.setProperty("group_id", "test");
+
+    Validation<RuntimeException, KafkaMessageBusConsumer>
+            kafkaMessageBusConsumerValidation =
+            KafkaMessageBusConsumer.constructConsumer(consumerSettings);
+    Assert.assertTrue(
+            kafkaMessageBusConsumerValidation.isSuccess()
+    );
+
+    KafkaMessageBusConsumer kafkaMessageBus =
+            kafkaMessageBusConsumerValidation.success();
+    kafkaMessageBus.addListener((validationObject) -> {
+      waiter.assertTrue(validationObject.isSuccess());
+
+      Properties record = validationObject.success();
+      waiter.assertEquals(record.getProperty("key"), "testKey");
+      waiter.assertEquals(record.getProperty("value"), "testValue");
       waiter.resume();
     });
-    testConsumer.listenToStream("testTopic");
-    waiter.await(500);
+    kafkaMessageBus.listenToMessageBus("testTopic");
+
+    waiter.await(1000);
   }
 
 }
