@@ -13,12 +13,28 @@ import java.util.concurrent.CompletableFuture;
 public interface DataStore<AtomicResultType, QueryBuilderType>
 {
 
+  /**
+   * Connect with the DataStore
+   * @return CompletableFuture
+   *  -> Validation object on async finish
+   */
   CompletableFuture<Validation<RuntimeException, ?>> connect();
 
+  /**
+   * Query the DataStore to manipulate the stored dataset
+   * @param queryBuilder
+   * @return CompletableFuture
+   *  -> Stream of AtomicResultType on async finish
+   */
   CompletableFuture<Stream<AtomicResultType>> query(
           QueryBuilderType queryBuilder
   );
 
+  /**
+   * Disconnect with the DataStore
+   * @return CompletableFuture
+   *  -> Validation object on async finish
+   */
   CompletableFuture<Validation<RuntimeException, ?>> disconnect();
 
 }
