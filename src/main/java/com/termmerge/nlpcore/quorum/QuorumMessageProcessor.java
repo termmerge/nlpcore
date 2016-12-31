@@ -2,6 +2,7 @@ package com.termmerge.nlpcore.quorum;
 
 import fj.data.Validation;
 
+
 /**
  * Contract for a processor that allows for serializing and
  *  deserializing Quorum Messages on and off network transport

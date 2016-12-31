@@ -3,6 +3,7 @@ package com.termmerge.nlpcore.messagebus;
 import java.util.function.Consumer;
 
 import java.util.Properties;
+
 import fj.data.Validation;
 
 

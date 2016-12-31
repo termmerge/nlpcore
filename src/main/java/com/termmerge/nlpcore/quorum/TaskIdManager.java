@@ -2,6 +2,7 @@ package com.termmerge.nlpcore.quorum;
 
 import fj.data.Validation;
 
+
 /**
  * Contract for any mechanism that allows us to generate uniquely
  *  identifiable task ids (relative to one physical client) or

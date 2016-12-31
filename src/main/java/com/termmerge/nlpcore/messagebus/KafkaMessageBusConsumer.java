@@ -1,8 +1,8 @@
 package com.termmerge.nlpcore.messagebus;
 
 import java.util.List;
-
 import java.util.function.Consumer;
+
 import java.util.ArrayList;
 import java.util.Properties;
 import java.util.Collections;
