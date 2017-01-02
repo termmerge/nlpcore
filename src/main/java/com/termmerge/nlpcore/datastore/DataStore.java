@@ -1,16 +1,18 @@
 package com.termmerge.nlpcore.datastore;
 
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import fj.data.Validation;
-import java.util.concurrent.CompletableFuture;
 
 
 /**
  * Contract for implementations that abstract over some datastore
  *  technology (Postgres, Redis, etc)
  */
-public interface DataStore<AtomicResultType, QueryBuilderType>
+public interface DataStore<
+        AtomicRawType, AtomicResultType,
+        QueryBuilderType, ConnectionType>
 {
 
   /**
@@ -18,23 +20,37 @@ public interface DataStore<AtomicResultType, QueryBuilderType>
    * @return CompletableFuture
    *  -> Validation object on async finish
    */
-  CompletableFuture<Validation<RuntimeException, ?>> connect();
+  Validation<RuntimeException, ConnectionType> connect();
 
   /**
    * Query the DataStore to manipulate the stored dataset
-   * @param queryBuilder
-   * @return CompletableFuture
-   *  -> Stream of AtomicResultType on async finish
+   * @param queryBuilder - query to run
+   * @param queryMapper - wraps over the raw atomic results
+   *   returned by the data store to the final atomic results.
+   * @return Validation object on async finish
    */
-  CompletableFuture<Stream<AtomicResultType>> query(
-          QueryBuilderType queryBuilder
+  Validation<RuntimeException, Stream<AtomicResultType>> query(
+          QueryBuilderType queryBuilder,
+          Function<AtomicRawType, AtomicResultType> queryMapper
+  );
+
+  /**
+   * Query the DataStore to manipulate the stored dataset, with the list
+   *  of ordered queries ran as one transaction.
+   * @param queryBuilders - queries to run
+   * @param queryMappers - wraps over the raw atomic results
+   *   returned by the data store to the final atomic results.
+   * @return Validation object on async finish
+   */
+  Validation<RuntimeException, Stream<AtomicResultType>> query(
+          QueryBuilderType[] queryBuilders,
+          Function<AtomicRawType, AtomicResultType>[] queryMappers
   );
 
   /**
    * Disconnect with the DataStore
-   * @return CompletableFuture
-   *  -> Validation object on async finish
+   * @return Validation object on async finish
    */
-  CompletableFuture<Validation<RuntimeException, ?>> disconnect();
+  Validation<RuntimeException, ConnectionType> disconnect();
 
 }
