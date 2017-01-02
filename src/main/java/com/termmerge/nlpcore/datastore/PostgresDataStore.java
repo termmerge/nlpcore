@@ -1,6 +1,5 @@
 package com.termmerge.nlpcore.datastore;
 
-import java.util.Properties;
 
 /**
  * Postgres-based implementation of DataStore (deriving off of JDBC)
@@ -8,9 +7,9 @@ import java.util.Properties;
 public class PostgresDataStore extends JDBCDataStore
 {
 
-  private PostgresDataStore(Properties properties)
+  public PostgresDataStore()
   {
-    super(properties, "org.postgresql.Driver");
+    super("org.postgresql.Driver");
   }
 
 }

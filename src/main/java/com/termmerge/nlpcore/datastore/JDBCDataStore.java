@@ -21,22 +21,19 @@ import org.apache.commons.dbutils.ResultSetIterator;
  * Generalized DataStore implementation for JDBC-based datastores
  *  Not thread-safe
  */
-class JDBCDataStore implements
+abstract class JDBCDataStore implements
         DataStore<Object[], PostgresEntity, String, Boolean>
 {
 
   private String driverName;
   private Connection dbConnection;
-  private Properties properties;
 
   JDBCDataStore(
-          Properties properties,
           String driverName
   )
   {
     this.driverName = driverName;
     this.dbConnection = null;
-    this.properties = properties;
   }
 
   public Validation<RuntimeException, Boolean> connect(
@@ -71,7 +68,7 @@ class JDBCDataStore implements
       Class.forName(this.driverName);
 
       this.dbConnection = DriverManager.getConnection(
-              this.properties.getProperty("connection_string")
+              properties.getProperty("connection_string")
       );
     } catch (ClassNotFoundException e) {
       return Validation.fail(
