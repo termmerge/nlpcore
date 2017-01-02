@@ -18,27 +18,29 @@ import org.apache.commons.dbutils.ResultSetIterator;
 
 
 /**
- * DataStore implementation for Postgres
+ * Generalized DataStore implementation for JDBC-based datastores
  *  Not thread-safe
  */
-public class PostgresDataStore implements
+class JDBCDataStore implements
         DataStore<Object[], PostgresEntity, String, Boolean>
 {
 
-  private static final String POSTGRES_DRIVER = "org.postgresql.Driver";
-
+  private String driverName;
   private Connection dbConnection;
-  private final Properties properties;
+  private Properties properties;
 
-  private PostgresDataStore(Properties properties)
+  protected JDBCDataStore(
+          Properties properties,
+          String driverName
+  )
   {
+    this.driverName = driverName;
     this.dbConnection = null;
     this.properties = properties;
   }
 
-  public static
-    Validation<RuntimeException, PostgresDataStore> createDataStore(
-            Properties properties
+  public Validation<RuntimeException, Boolean> connect(
+          Properties properties
   )
   {
     String[] requiredProperties = {"connection_string"};
@@ -50,23 +52,23 @@ public class PostgresDataStore implements
       }
     }
 
-    return Validation.success(
-            new PostgresDataStore(properties)
-    );
-  }
+    if (this.dbConnection != null) {
+      return Validation.fail(
+              new RuntimeException(
+                      "Database connection already initialized!"
+              )
+      );
+    }
+    else if (this.driverName == null) {
+      return Validation.fail(
+              new RuntimeException(
+                      "Database driver name not set"
+              )
+      );
+    }
 
-  public Validation<RuntimeException, Boolean> connect()
-  {
     try {
-      Class.forName(PostgresDataStore.POSTGRES_DRIVER);
-
-      if (this.dbConnection != null) {
-        return Validation.fail(
-                new RuntimeException(
-                        "Database connection already initialized!"
-                )
-        );
-      }
+      Class.forName(this.driverName);
 
       this.dbConnection = DriverManager.getConnection(
               this.properties.getProperty("connection_string")
@@ -80,7 +82,7 @@ public class PostgresDataStore implements
               new RuntimeException("Cannot connect to database.")
       );
     }
-
+    
     return Validation.success(true);
   }
 

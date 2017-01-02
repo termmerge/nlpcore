@@ -15,10 +15,12 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
+import org.apache.kafka.common.KafkaException;
+
 
 /**
  * Obtains a data messagebus from a publisher using the
- * Apache Kafka publish-subscribe system.
+ *  Apache Kafka publish-subscribe system.
  */
 public class KafkaMessageBusConsumer implements MessageBusConsumer
 {
@@ -40,29 +42,15 @@ public class KafkaMessageBusConsumer implements MessageBusConsumer
   private Logger logger;
 
 
-  private KafkaMessageBusConsumer(Properties kafkaSettings)
+  public KafkaMessageBusConsumer()
   {
-    // Obtain required settings and emit an error if non-existent
-    String[] requiredSettings = {"connection_string", "group_id"};
-    for (String requiredSetting : requiredSettings) {
-      if (!kafkaSettings.containsKey(requiredSetting)) {
-        throw new IllegalArgumentException(
-                "Kafka settings are not correctly set!"
-        );
-      }
-    }
-
-    // Kafka Network Settings
+    // Kafka Default Network Settings
     this.networkSettings = new Properties();
-    networkSettings.put("bootstrap.servers",
-            kafkaSettings.getProperty("connection_string"));
-    networkSettings.put("auto.offset.reset", "earliest");
-    networkSettings.put("group.id",
-            kafkaSettings.getProperty("group_id"));
-    networkSettings.put("enable.auto.commit", "true");
-    networkSettings.put("key.deserializer",
+    this.networkSettings.put("auto.offset.reset", "earliest");
+    this.networkSettings.put("enable.auto.commit", "true");
+    this.networkSettings.put("key.deserializer",
             "org.apache.kafka.common.serialization.StringDeserializer");
-    networkSettings.put("value.deserializer",
+    this.networkSettings.put("value.deserializer",
             "org.apache.kafka.common.serialization.StringDeserializer");
 
     this.listeners = Collections.synchronizedList(
@@ -73,20 +61,38 @@ public class KafkaMessageBusConsumer implements MessageBusConsumer
     this.logger = LoggerFactory.getLogger(KafkaMessageBusConsumer.class);
   }
 
-  public static
-    Validation<RuntimeException, KafkaMessageBusConsumer> constructConsumer(
+  public Validation<RuntimeException, Boolean> connect(
           Properties kafkaSettings
   )
   {
-    final KafkaMessageBusConsumer instance;
+    // Check that required configurable Kafka settings are populated
+    String[] requiredSettings = {"connection_string", "group_id"};
+    for (String requiredSetting : requiredSettings) {
+      if (!kafkaSettings.containsKey(requiredSetting)) {
+        return Validation.fail(new IllegalArgumentException(
+                "Kafka settings are not correctly set!"
+        ));
+      }
+    }
+    this.networkSettings.put(
+            "bootstrap.servers",
+            kafkaSettings.getProperty("connection_string")
+    );
+    this.networkSettings.put(
+            "group.id",
+            kafkaSettings.getProperty("group_id")
+    );
 
+    // Test a connection to Kafka Server - early network error detection!
+    KafkaConsumer<String, String> testConsumer;
     try {
-      instance = new KafkaMessageBusConsumer(kafkaSettings);
-    } catch (IllegalArgumentException e) {
+       testConsumer = new KafkaConsumer<>(this.networkSettings);
+    } catch (KafkaException e) {
       return Validation.fail(e);
     }
 
-    return Validation.success(instance);
+    testConsumer.close();
+    return Validation.success(true);
   }
 
   public Validation<RuntimeException, Long> listenToMessageBus(
@@ -105,12 +111,12 @@ public class KafkaMessageBusConsumer implements MessageBusConsumer
 
     this.pollingThread = new Thread(() -> {
       // Initialize Kafka Consumer and subscribe to specified topic
-      KafkaConsumer<String, String> kafkaConsumer =
-              new KafkaConsumer<>(networkSettings);
+      KafkaConsumer<String, String> kafkaConsumer;
+      kafkaConsumer = new KafkaConsumer<>(networkSettings);
+
       ArrayList<String> topicsList = new ArrayList<>();
 
       // Synchronized publish of a Validation object to all current consumers
-
       topicsList.add(topicName);
       try {
         kafkaConsumer.subscribe(topicsList);
@@ -180,7 +186,7 @@ public class KafkaMessageBusConsumer implements MessageBusConsumer
     }
   }
 
-  public Validation<RuntimeException, Long> teardownConsumer()
+  public Validation<RuntimeException, Long> disconnect()
   {
     if (this.pollingThread == null) {
       return Validation.fail(

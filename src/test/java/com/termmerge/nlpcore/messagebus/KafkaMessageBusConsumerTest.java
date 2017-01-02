@@ -22,13 +22,21 @@ public class KafkaMessageBusConsumerTest
           new KafkaJunitRule(EphemeralKafkaBroker.create());
 
   @Test
-  public void testInvalidSettingFails()
+  public void testValidSettingsPass()
   {
     Properties settings = new Properties();
-    settings.setProperty("connection_string", "_");
+    settings.setProperty(
+            "connection_string",
+            "localhost:" + Integer.toString(
+                    kafkaRule.helper().kafkaPort()
+            )
+    );
     settings.setProperty("group_id", "_");
+
+    KafkaMessageBusConsumer kafkaMessageBusConsumer =
+            new KafkaMessageBusConsumer();
     Assert.assertTrue(
-            KafkaMessageBusConsumer.constructConsumer(settings).isSuccess()
+            kafkaMessageBusConsumer.connect(settings).isSuccess()
     );
   }
 
@@ -37,6 +45,7 @@ public class KafkaMessageBusConsumerTest
   {
     Waiter waiter = new Waiter();
 
+    // Create a Producer and publish a random message
     KafkaProducer<String, String> testProducer =
             kafkaRule.helper().createStringProducer();
     testProducer.send(
@@ -44,6 +53,7 @@ public class KafkaMessageBusConsumerTest
     );
     testProducer.flush();
 
+    // Create a Consumer
     Properties consumerSettings = new Properties();
     consumerSettings.setProperty(
             "connection_string",
@@ -52,17 +62,14 @@ public class KafkaMessageBusConsumerTest
             )
     );
     consumerSettings.setProperty("group_id", "test");
-
-    Validation<RuntimeException, KafkaMessageBusConsumer>
-            kafkaMessageBusConsumerValidation =
-            KafkaMessageBusConsumer.constructConsumer(consumerSettings);
+    KafkaMessageBusConsumer kafkaMessageBusConsumer =
+            new KafkaMessageBusConsumer();
     Assert.assertTrue(
-            kafkaMessageBusConsumerValidation.isSuccess()
+            kafkaMessageBusConsumer.connect(consumerSettings).isSuccess()
     );
 
-    KafkaMessageBusConsumer kafkaMessageBus =
-            kafkaMessageBusConsumerValidation.success();
-    kafkaMessageBus.addListener((validationObject) -> {
+    // Add a listener and listen to the message bus
+    kafkaMessageBusConsumer.addListener((validationObject) -> {
       waiter.assertTrue(validationObject.isSuccess());
 
       Properties record = validationObject.success();
@@ -70,7 +77,7 @@ public class KafkaMessageBusConsumerTest
       waiter.assertEquals(record.getProperty("value"), "testValue");
       waiter.resume();
     });
-    kafkaMessageBus.listenToMessageBus("testTopic");
+    kafkaMessageBusConsumer.listenToMessageBus("testTopic");
 
     waiter.await(1000);
   }

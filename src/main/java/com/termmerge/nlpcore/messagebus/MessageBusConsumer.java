@@ -1,9 +1,9 @@
 package com.termmerge.nlpcore.messagebus;
 
 import java.util.function.Consumer;
+import com.termmerge.nlpcore.NetworkIO;
 
 import java.util.Properties;
-
 import fj.data.Validation;
 
 
@@ -13,7 +13,7 @@ import fj.data.Validation;
  * network and listens to whatever that publisher is
  * producing.
  */
-public interface MessageBusConsumer
+public interface MessageBusConsumer extends NetworkIO
 {
 
   /**
@@ -62,6 +62,6 @@ public interface MessageBusConsumer
    *  Fail -> RuntimeException
    *  Success -> Thread ID
    */
-  Validation<RuntimeException, Long> teardownConsumer();
+  Validation<RuntimeException, Long> disconnect();
 
 }

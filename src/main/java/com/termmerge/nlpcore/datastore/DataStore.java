@@ -2,6 +2,9 @@ package com.termmerge.nlpcore.datastore;
 
 import java.util.function.Function;
 import java.util.stream.Stream;
+import com.termmerge.nlpcore.NetworkIO;
+
+import java.util.Properties;
 
 import fj.data.Validation;
 
@@ -12,7 +15,7 @@ import fj.data.Validation;
  */
 public interface DataStore<
         AtomicRawType, AtomicResultType,
-        QueryBuilderType, ConnectionType>
+        QueryBuilderType, ConnectionType> extends NetworkIO
 {
 
   /**
@@ -20,7 +23,9 @@ public interface DataStore<
    * @return CompletableFuture
    *  -> Validation object on async finish
    */
-  Validation<RuntimeException, ConnectionType> connect();
+  Validation<RuntimeException, ConnectionType> connect(
+          Properties properties
+  );
 
   /**
    * Query the DataStore to manipulate the stored dataset
