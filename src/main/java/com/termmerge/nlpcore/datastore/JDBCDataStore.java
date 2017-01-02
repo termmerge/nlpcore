@@ -29,7 +29,7 @@ class JDBCDataStore implements
   private Connection dbConnection;
   private Properties properties;
 
-  protected JDBCDataStore(
+  JDBCDataStore(
           Properties properties,
           String driverName
   )
@@ -82,7 +82,7 @@ class JDBCDataStore implements
               new RuntimeException("Cannot connect to database.")
       );
     }
-    
+
     return Validation.success(true);
   }
 
