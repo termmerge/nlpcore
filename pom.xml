@@ -36,6 +36,11 @@
       <artifactId>kafka-junit</artifactId>
       <version>3.0.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.eu.acolyte</groupId>
+      <artifactId>jdbc-driver</artifactId>
+      <version>1.0.41-j7p</version>
+    </dependency>
 
     <dependency>
       <groupId>org.apache.kafka</groupId>
