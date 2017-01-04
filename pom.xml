@@ -30,16 +30,19 @@
       <groupId>net.jodah</groupId>
       <artifactId>concurrentunit</artifactId>
       <version>0.4.2</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.github.charithe</groupId>
       <artifactId>kafka-junit</artifactId>
       <version>3.0.0</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.eu.acolyte</groupId>
       <artifactId>jdbc-driver</artifactId>
       <version>1.0.41-j7p</version>
+        <scope>test</scope>
     </dependency>
 
     <dependency>
