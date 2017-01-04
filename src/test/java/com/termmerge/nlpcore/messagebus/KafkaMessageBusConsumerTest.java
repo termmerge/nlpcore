@@ -2,7 +2,6 @@ package com.termmerge.nlpcore.messagebus;
 
 import java.util.Properties;
 
-import fj.data.Validation;
 import org.junit.ClassRule;
 import org.junit.Test;
 
