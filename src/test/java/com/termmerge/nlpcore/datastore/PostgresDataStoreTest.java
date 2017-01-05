@@ -9,7 +9,6 @@ import acolyte.jdbc.StatementHandler;
 
 import acolyte.jdbc.RowLists;
 import acolyte.jdbc.CompositeHandler;
-import com.termmerge.nlpcore.datastore.entity.PostgresEntity;
 import fj.data.Validation;
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,7 +18,7 @@ import org.junit.Test;
 public class PostgresDataStoreTest
 {
 
-  private class TestableEntity implements PostgresEntity {
+  private class TestableEntity {
     String column1;
     String column2;
   }
