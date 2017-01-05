@@ -3,7 +3,6 @@ package com.termmerge.nlpcore.datastore;
 import java.sql.ResultSet;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import com.termmerge.nlpcore.datastore.entity.PostgresEntity;
 import java.sql.PreparedStatement;
 import java.sql.Connection;
 
@@ -22,7 +21,7 @@ import org.apache.commons.dbutils.ResultSetIterator;
  *  Not thread-safe
  */
 abstract class JDBCDataStore implements
-        DataStore<Object[], PostgresEntity, String, Boolean>
+        DataStore<Object[], String, Boolean>
 {
 
   private String driverName;
@@ -83,9 +82,9 @@ abstract class JDBCDataStore implements
     return Validation.success(true);
   }
 
-  public Validation<RuntimeException, Stream<PostgresEntity>> query(
+  public Validation<RuntimeException, Stream<?>> query(
           String sqlQuery,
-          Function<Object[], PostgresEntity> queryMapper
+          Function<Object[], ?> queryMapper
   )
   {
     ReactiveSeq<Object[]> stream = null;
@@ -108,9 +107,9 @@ abstract class JDBCDataStore implements
     );
   }
 
-  public Validation<RuntimeException, Stream<PostgresEntity>> query(
+  public Validation<RuntimeException, Stream<?>> query(
           String[] sqlQueries,
-          Function<Object[], PostgresEntity>[] queryMappers
+          Function<Object[], ?>[] queryMappers
   )
   {
     try {
@@ -121,14 +120,14 @@ abstract class JDBCDataStore implements
       );
     }
 
-    Stream<Validation<RuntimeException, Stream<PostgresEntity>>>
+    Stream<Validation<RuntimeException, Stream<?>>>
             stream =
             ReactiveSeq
                     .fromStream(Arrays.stream(sqlQueries))
                     .zip(Arrays.stream(queryMappers))
                     .map(tuple -> tuple.map(this::query));
 
-    Validation<RuntimeException, Stream<PostgresEntity>> result =
+    Validation<RuntimeException, Stream<?>> result =
             stream.reduce(
                     Validation.success(ReactiveSeq.empty()),
                     (accumValidation, currentValidation) -> {

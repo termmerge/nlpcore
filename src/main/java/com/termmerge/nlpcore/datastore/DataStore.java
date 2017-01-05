@@ -14,8 +14,9 @@ import fj.data.Validation;
  *  technology (Postgres, Redis, etc)
  */
 public interface DataStore<
-        AtomicRawType, AtomicResultType,
-        QueryBuilderType, ConnectionType> extends NetworkIO
+        AtomicRawType,
+        QueryBuilderType,
+        ConnectionType> extends NetworkIO
 {
 
   /**
@@ -34,9 +35,9 @@ public interface DataStore<
    *   returned by the data store to the final atomic results.
    * @return Validation object on async finish
    */
-  Validation<RuntimeException, Stream<AtomicResultType>> query(
+  Validation<RuntimeException, Stream<?>> query(
           QueryBuilderType queryBuilder,
-          Function<AtomicRawType, AtomicResultType> queryMapper
+          Function<AtomicRawType, ?> queryMapper
   );
 
   /**
@@ -47,9 +48,9 @@ public interface DataStore<
    *   returned by the data store to the final atomic results.
    * @return Validation object on async finish
    */
-  Validation<RuntimeException, Stream<AtomicResultType>> query(
+  Validation<RuntimeException, Stream<?>> query(
           QueryBuilderType[] queryBuilders,
-          Function<AtomicRawType, AtomicResultType>[] queryMappers
+          Function<AtomicRawType, ?>[] queryMappers
   );
 
   /**
