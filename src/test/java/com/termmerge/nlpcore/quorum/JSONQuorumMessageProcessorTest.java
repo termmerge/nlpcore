@@ -12,7 +12,7 @@ public class JSONQuorumMessageProcessorTest
   @Test
   public void testSerialization()
   {
-    TaskIdManager taskIdManager = new TaskIdManager()
+    TaskManager taskIdManager = new TaskManager()
     {
       @Override
       public Validation<RuntimeException, String> generateId()
@@ -54,7 +54,7 @@ public class JSONQuorumMessageProcessorTest
             "'recipient': 'someRecipient'," +
             "'task': 'empire'," +
             "'time': '1483117437420'," +
-            "'taskId': 'ABC1'," +
+            "'consumerId': 'ABC1'," +
             "'params': {'key1': 'value1', 'key2': 'value2'}" +
             "}";
 
@@ -82,7 +82,7 @@ public class JSONQuorumMessageProcessorTest
     );
     Assert.assertEquals(
             "ABC1",
-            quorumMessage.getTaskId()
+            quorumMessage.getConsumerId()
     );
     Assert.assertEquals(
             "value1",

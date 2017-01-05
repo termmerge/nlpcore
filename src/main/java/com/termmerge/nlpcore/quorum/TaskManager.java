@@ -8,7 +8,7 @@ import fj.data.Validation;
  *  identifiable task ids (relative to one physical client) or
  *  destroy them
  */
-public interface TaskIdManager
+public interface TaskManager
 {
 
   /**

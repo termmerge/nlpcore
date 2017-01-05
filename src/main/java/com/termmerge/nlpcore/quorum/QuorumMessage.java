@@ -4,8 +4,6 @@ import java.util.Date;
 import java.util.Properties;
 import java.util.Arrays;
 
-import fj.F;
-
 import fj.data.Validation;
 
 
@@ -55,9 +53,8 @@ public class QuorumMessage
   // What task is this message intended for processing
   private String task;
 
-  // When combined with "task", uniquely identifiable atomic NLP task
-  //  for some singular client
-  private String taskId;
+  // The real-world consumer who initiated this task
+  private String consumerId;
 
   // What time was this message created
   private Date time;
@@ -74,7 +71,7 @@ public class QuorumMessage
     private String sender;
     private String recipient;
     private String task;
-    private String taskId;
+    private String consumerId;
     private Date time;
     private Properties params;
 
@@ -116,7 +113,7 @@ public class QuorumMessage
     }
 
     public Validation<RuntimeException, QuorumMessage> build(
-            TaskIdManager taskIdManager
+            TaskManager consumerIdManager
     )
     {
       if (!Arrays.asList(QuorumMessage.ALLOWABLE_SENDER_RECIPIENT)
@@ -133,11 +130,10 @@ public class QuorumMessage
       }
 
       this.time = new Date();
-      F<String, QuorumMessage> generateQuorumMessage = (taskId) -> {
-        this.taskId = taskId;
+      return consumerIdManager.generateId().map((consumerId) -> {
+        this.consumerId = consumerId;
         return new QuorumMessage(this);
-      };
-      return taskIdManager.generateId().map(generateQuorumMessage);
+      });
     }
 
   }
@@ -147,7 +143,7 @@ public class QuorumMessage
     this.sender = builder.sender;
     this.recipient = builder.recipient;
     this.task = builder.task;
-    this.taskId = builder.taskId;
+    this.consumerId = builder.consumerId;
     this.time = builder.time;
     this.params = builder.params;
   }
@@ -167,9 +163,9 @@ public class QuorumMessage
     return this.task;
   }
 
-  public String getTaskId()
+  public String getConsumerId()
   {
-    return this.taskId;
+    return this.consumerId;
   }
 
   public Date getTime()
